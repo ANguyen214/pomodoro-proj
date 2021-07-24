@@ -49,6 +49,8 @@ function nextSession(focusDuration, breakDuration) {
   };
 }
 
+
+
 function Pomodoro() {
   // Timer starts out paused
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -60,6 +62,7 @@ function Pomodoro() {
 
   const [breakDuration, setBreakDuration] = useState(5);
 
+  const [aria, setAria] = useState(0);
   /**
    * Custom hook that invokes the callback function every second
    *
@@ -70,10 +73,49 @@ function Pomodoro() {
         new Audio("https://bigsoundbank.com/UPLOAD/mp3/1482.mp3").play();
         return setSession(nextSession(focusDuration, breakDuration));
       }
-      return setSession(nextTick);
+      setSession(nextTick);
+      calcAria(session);
     },
     isTimerRunning ? 1000 : null
   );
+
+  function calcTimeRemaining (time) {
+    let timeInMins = "";
+    let minutes = Math.floor(time / 60);
+    if(minutes < 10) {minutes = "0" + minutes;}
+    let seconds = time - minutes * 60;
+    if(seconds < 10) {seconds = "0" + seconds;}
+    timeInMins = (`${minutes}:${seconds}`).toString();
+  
+    return timeInMins;
+  }
+
+  function sessionTitle (sessionType) {
+    if(sessionType === "Focusing") {
+      if(focusDuration < 9){
+        return (`${session.label} for 0${focusDuration}:00 minutes`);
+      } else {
+        return (`${session.label} for ${focusDuration}:00 minutes`);
+      }
+    } 
+      
+    if(sessionType === "On Break") {
+      if(breakDuration < 9) {
+        return (`${session.label} for 0${breakDuration}:00 minutes`);
+      }
+      else {
+        return (`${session.label} for ${breakDuration}:00 minutes`); 
+      }
+    } 
+  }
+
+  function calcAria(instance) {
+    if(instance.label === "Focusing") {
+      setAria((focusDuration * 60 - session.timeRemaining) / (focusDuration * 60) * 100);
+    } else {
+      setAria((breakDuration * 60 - session.timeRemaining) / (breakDuration * 60) * 100);
+    }   
+  }
 
   /**
    * Called whenever the play/pause button is clicked.
@@ -115,6 +157,7 @@ function Pomodoro() {
                 className="btn btn-secondary"
                 data-testid="decrease-focus"
                 onClick={() => {if(focusDuration > 5) setFocusDuration(focusDuration - 5)}}
+                disabled={isTimerRunning}
               >
                 <span className="oi oi-minus" />
               </button>
@@ -125,6 +168,7 @@ function Pomodoro() {
                 className="btn btn-secondary"
                 data-testid="increase-focus"
                 onClick={() => {if(focusDuration < 60) setFocusDuration(focusDuration + 5)}}
+                disabled={isTimerRunning}
               >
                 <span className="oi oi-plus" />
               </button>
@@ -146,6 +190,7 @@ function Pomodoro() {
                   className="btn btn-secondary"
                   data-testid="decrease-break"
                   onClick={() => {if (breakDuration > 1) setBreakDuration(breakDuration - 1)}}
+                  disabled={isTimerRunning}
                 >
                   <span className="oi oi-minus" />
                 </button>
@@ -156,6 +201,7 @@ function Pomodoro() {
                   className="btn btn-secondary"
                   data-testid="increase-break"
                   onClick={() => {if(breakDuration < 15) setBreakDuration(breakDuration + 1)}}
+                  disabled={isTimerRunning}
                 >
                   <span className="oi oi-plus" />
                 </button>
@@ -208,18 +254,23 @@ function Pomodoro() {
       <div>
         {/* TODO: This area should show only when there is an active focus or break - i.e. 
         the session is running or is paused */}
-        <div className="row mb-2">
-          <div className="col">
+        {session ? (
+          <div>
+          <div className="row mb-2">
+          <div className="col"> 
             {/* TODO: Update message below to include current session 
             (Focusing or On Break) total duration */}
             <h2 data-testid="session-title">
-              {session?.label} for 25:00 minutes
+              {/*{session?.label} for {focusDuration} minutes*/}
+              {sessionTitle(session.label)}
             </h2>
             {/* TODO: Update message below correctly format the time 
             remaining in the current session */}
             <p className="lead" data-testid="session-sub-title">
-              {session?.timeRemaining} remaining
+              {/*{session?.timeRemaining} remaining*/}
+              {calcTimeRemaining(session.timeRemaining)} remaining
             </p>
+            <h3>{!isTimerRunning ? "PAUSED" : null }</h3>
           </div>
         </div>
         <div className="row mb-2">
@@ -230,12 +281,14 @@ function Pomodoro() {
                 role="progressbar"
                 aria-valuemin="0"
                 aria-valuemax="100"
-                aria-valuenow="0" // TODO: Increase aria-valuenow as elapsed time increases
-                style={{ width: "0%" }} // TODO: Increase width % as elapsed time increases
+                aria-valuenow={aria} // TODO: Increase aria-valuenow as elapsed time increases
+                style={{ width: `${aria}%`}} // TODO: Increase width % as elapsed time increases
               />
             </div>
           </div>
         </div>
+        </div>): null}
+        
       </div>
     </div>
   );
