@@ -73,7 +73,7 @@ function Pomodoro() {
         new Audio("https://bigsoundbank.com/UPLOAD/mp3/1482.mp3").play();
         return setSession(nextSession(focusDuration, breakDuration));
       }
-      setSession(nextTick);
+      setSession(() => nextTick);
       calcAria(session);
     },
     isTimerRunning ? 1000 : null
@@ -111,9 +111,9 @@ function Pomodoro() {
 
   function calcAria(instance) {
     if(instance.label === "Focusing") {
-      setAria((focusDuration * 60 - session.timeRemaining) / (focusDuration * 60) * 100);
+      setAria(() => (focusDuration * 60 - session.timeRemaining) / (focusDuration * 60) * 100);
     } else {
-      setAria((breakDuration * 60 - session.timeRemaining) / (breakDuration * 60) * 100);
+      setAria(() => (breakDuration * 60 - session.timeRemaining) / (breakDuration * 60) * 100);
     }   
   }
 
